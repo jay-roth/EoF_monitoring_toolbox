@@ -6,4 +6,6 @@
 4. **Statistical Analysis**: Various parametric and non-parametric tests  
 5. **Plotting**: Various plots to be generated from formatted data  
 
-![image](https://user-images.githubusercontent.com/61740989/221378889-720ea7be-b7a5-45cb-af63-1f1baef9ecb3.png)
+![peak_discharge_cfs](https://user-images.githubusercontent.com/61740989/221663127-a70c1d20-a40a-4c9f-b6be-be8ea1d8e6bc.png)
+
+![event_timeline](https://user-images.githubusercontent.com/61740989/221663199-a66cfc8b-2c85-4820-9566-232a043517c7.jpg)
