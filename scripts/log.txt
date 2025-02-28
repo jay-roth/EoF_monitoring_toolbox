@@ -1,0 +1,81 @@
+PARAMETER FILE 'NRCS_EoF_ANCOVA_input.txt' READ SUCCESSFULLY
+DATA FILE 'MO_EoF_data.csv' READ SUCCESSFULLY
+PROCESSING DATA & ANALYSIS FOR GROUP: MO_EoF
+Performing analysis for control MO1171601 and treatment MO1171602
+	Processing Observation Qp
+		OUTLIER REMOVAL RESULTS
+			0 outliers found in 196 samples for par Qp
+		DATA TRANSFORMATION RESULTS
+			Raw and Log data failed to pass test for normality
+		Data volume or quality insufficient to perform ANCOVA for sites MO1171601, MO1171602 and observation Qp
+	Processing Observation Q
+		OUTLIER REMOVAL RESULTS
+			4 outliers found in 196 samples for par Q
+		DATA TRANSFORMATION RESULTS
+			Raw and Log data failed to pass test for normality
+		Data volume or quality insufficient to perform ANCOVA for sites MO1171601, MO1171602 and observation Q
+	Processing Observation NO3-N
+		OUTLIER REMOVAL RESULTS
+			15 outliers found in 196 samples for par NO3-N
+		DATA TRANSFORMATION RESULTS
+			Log variances are not equal, alpha 0.10
+			4 of 4 Log data sets are normal, alpha 0.10
+			WARNING transformed data sets not all normal
+			Using Log data values for par: NO3-N
+		PAIRED EVENT PROCESSING RESULTS
+			23 # events (min = 5) during Bl phase
+			20 # events (min = 5) during Tx phase
+		Data volume or quality sufficient to perform ANCOVA for sites MO1171601, MO1171602 and observation NO3-N
+		Check output directory for plot and regression table
+	Processing Observation TKN
+		OUTLIER REMOVAL RESULTS
+			17 outliers found in 196 samples for par TKN
+		DATA TRANSFORMATION RESULTS
+			Log variances are not equal, alpha 0.10
+			4 of 4 Log data sets are normal, alpha 0.10
+			WARNING transformed data sets not all normal
+			Using Log data values for par: TKN
+		PAIRED EVENT PROCESSING RESULTS
+			25 # events (min = 5) during Bl phase
+			18 # events (min = 5) during Tx phase
+		Data volume or quality sufficient to perform ANCOVA for sites MO1171601, MO1171602 and observation TKN
+		Check output directory for plot and regression table
+	Processing Observation OP
+		OUTLIER REMOVAL RESULTS
+			13 outliers found in 196 samples for par OP
+		DATA TRANSFORMATION RESULTS
+			Log variances are not equal, alpha 0.10
+			4 of 4 Log data sets are normal, alpha 0.10
+			WARNING transformed data sets not all normal
+			Using Log data values for par: OP
+		PAIRED EVENT PROCESSING RESULTS
+			17 # events (min = 5) during Bl phase
+			18 # events (min = 5) during Tx phase
+		Data volume or quality sufficient to perform ANCOVA for sites MO1171601, MO1171602 and observation OP
+		Check output directory for plot and regression table
+	Processing Observation TP
+		OUTLIER REMOVAL RESULTS
+			10 outliers found in 196 samples for par TP
+		DATA TRANSFORMATION RESULTS
+			Log variances are not equal, alpha 0.10
+			4 of 4 Log data sets are normal, alpha 0.10
+			WARNING transformed data sets not all normal
+			Using Log data values for par: TP
+		PAIRED EVENT PROCESSING RESULTS
+			28 # events (min = 5) during Bl phase
+			20 # events (min = 5) during Tx phase
+		Data volume or quality sufficient to perform ANCOVA for sites MO1171601, MO1171602 and observation TP
+		Check output directory for plot and regression table
+	Processing Observation TSS
+		OUTLIER REMOVAL RESULTS
+			10 outliers found in 196 samples for par TSS
+		DATA TRANSFORMATION RESULTS
+			Log variances are not equal, alpha 0.10
+			4 of 4 Log data sets are normal, alpha 0.10
+			WARNING transformed data sets not all normal
+			Using Log data values for par: TSS
+		PAIRED EVENT PROCESSING RESULTS
+			32 # events (min = 5) during Bl phase
+			19 # events (min = 5) during Tx phase
+		Data volume or quality sufficient to perform ANCOVA for sites MO1171601, MO1171602 and observation TSS
+		Check output directory for plot and regression table
