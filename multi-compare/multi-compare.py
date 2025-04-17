@@ -13,21 +13,30 @@ and generating plots and tables from the analysis.
 
 Requires standard library, numpy, pandas, and matplotlib
 
-Ingests a regularly formatted instruction file and dataset.
+Ingests a regularly formatted instruction file and csv dataset.
 Conducts analysis on dataset as specified in instruction file.
-
-Determines if data are normally distributed or not
 
 
 1.) import data.
-2.) determine sites and the number of treatments
-3.) loop through each treatment site
-    a.) determine if data are normal
-        i.) perform ANOVA - Tukey
-    b.)
-        ii.) perform KW - Dunns
-
+2.) iterate over groups
+3.) iterate over treatments wihtin a group
+4.) iterate over observations
+5.) remove outliers for each phase, site combo
+    a.) enough data left?
+6.) test for normality
+    a.) can they be made normal?
+    
+    a.) data are normal?
+        i.) perform ANOVA -> Tukey hsd
+    b.) data can be transformed normal?
+        i.) transform data
+       ii.) perform ANOVA -> Tukey hsd
+    b.) data are not normal
+        ii.) perform KW -> Dunns test
+    d.) plot figures
+    c.) print stats
 """
+
 import os
 import pandas as pd
 import numpy as np
@@ -275,15 +284,14 @@ def readWqData(params):
         
 def appendLogFile(f, msg, m='a+'):
     """
-    
     Parameters
     ----------
-    f : TYPE
-        DESCRIPTION.
-    msg : TYPE
-        DESCRIPTION.
-    m : TYPE, optional
-        DESCRIPTION. The default is 'a+'.
+    f : TYPE- String
+        DESCRIPTION- Path to log file
+    msg :TYPE- String
+         Description- String to append to log file
+    m : TYPE- String, optional
+        DESCRIPTION- Mode to open file in, The default is 'a+'.
 
     Returns
     -------
@@ -295,16 +303,16 @@ def appendLogFile(f, msg, m='a+'):
     with open(f, m) as f:
         f.write(msg)
 
-def getPairedData(ct_data, tr_data, types, phases, date_col, obs_col, 
-                  phase_col, min_evt=5):
+
+def getPairedData(pdf, date_col, type_col, min_evt=5):
     """
     
 
     Parameters
     ----------
-    df : TYPE
-        DESCRIPTION.
-    prj : TYPE
+    df : TYPE - dataframe
+        DESCRIPTION - sample data for >1 sites and corresponding dates 
+    prj : TYPE - 
         DESCRIPTION.
     ctrl_staid : TYPE
         DESCRIPTION.
@@ -322,8 +330,23 @@ def getPairedData(ct_data, tr_data, types, phases, date_col, obs_col,
 
     2/25/2023: created function - j.roth 
     """
+    types = pdf.types.unique()
+     
 
+    ct_data = pdf[(pdf[type_col]==types[0]) &\
+                   (df[obs_col]>0)][[date_col, 
+                                     phase_col, 
+                                     obs_col]]
 
+    ct_data.sort_values('date')
+
+    ## get xment site data
+    tr_data = pdf[(pdf[type_col]!=types[0]) &\
+                   (df[obs_col]>0)][[date_col, 
+                                     phase_col, 
+                                     obs_col]]
+  
+    tr_data.sort_values('date')
     ## get list of paired event dates for treatment and control staid
     ## determine where 
     for d in tr_data[date_col]:
@@ -333,24 +356,22 @@ def getPairedData(ct_data, tr_data, types, phases, date_col, obs_col,
     for d in ct_data[date_col]:
         if tr_data[tr_data[date_col]==d].shape[0]<1:
             ct_data = ct_data.drop(ct_data[ct_data[date_col]==d].index)      
-    
+
     ## change names of data columns before concatenating
     ## treatment data is dependant ergo Y, control is independant ergo X
     ct_data = ct_data.rename(columns={obs_col:types[0]})
     tr_data = tr_data.rename(columns={obs_col:types[1]})
-    
-    tr_data.set_index(ct_data.index, inplace=True)
-    
-    par_df = pd.concat([ct_data, tr_data[types[1]]], axis=1)
-    
-    msg, err = checkPairedDataCount(par_df, phase_col, min_evt)   
 
+    tr_data.set_index(ct_data.index, inplace=True)
+
+    par_df = pd.concat([ct_data, tr_data[types[1]]], axis=1)
+
+    msg, err = checkPairedDataCount(par_df, phase_col, min_evt)   
+    
     return par_df, msg, err
 
 def checkPairedDataCount(df, phase_col, min_evt=5):
     """
-    
-
     Parameters
     ----------
     df : TYPE
@@ -393,8 +414,7 @@ def checkPairedDataCount(df, phase_col, min_evt=5):
         
     return msg, err
     
-    
-def removeOutliers(df, par, typ, phs, m=1.5, min_evt=5):
+def removeOutliers(df, typ, phs, par, m=1.5, min_evt=5):
     """
     Take paired data and removes the outliers from each data set as m% of iqr.
     to preserve paired data.
@@ -417,22 +437,26 @@ def removeOutliers(df, par, typ, phs, m=1.5, min_evt=5):
     2/25/2023: created function - j.roth
     10/30/2023: modified to work with new standalone script - j.roth    
     """
+    #sites = df[sit].unique()
     types = df[typ].unique()
     phases = df[phs].unique()
     init_count = df.shape[0]
-    
+
     for t in types:
         for p in phases:
             ## loop through phases
             dat = df[(df[phs]==p) & (df[typ]==t)][par].values
             if dat.shape[0] > 3:
+                
+                ## get the interquartile range
                 x25, x75 = np.percentile(dat, [25,75])
-        
                 x_iqr = x75-x25
+                
+                ## get the min and max values for outliers
                 x_lo = x25-x_iqr*m
                 x_hi = x75+x_iqr*m
             
-            
+                ## drop indices that fall outside of ranges
                 d_idx = df[(df[typ]==t) & (df[phs]==p) & (df[par]<x_lo)].index
                 df = df.drop(d_idx)
                 d_idx = df[(df[typ]==t) & (df[phs]==p) & (df[par]>x_hi)].index
@@ -454,8 +478,7 @@ def removeOutliers(df, par, typ, phs, m=1.5, min_evt=5):
                 
         return df, msg, err
             
-    
-def transformData(df, par_col, sit_col, phs_col, alpha=0.025, min_pass=2):
+def transformData(df, typ, phs, par, alpha=0.025, min_pass=2):
     """
 
     Parameters
@@ -488,14 +511,19 @@ def transformData(df, par_col, sit_col, phs_col, alpha=0.025, min_pass=2):
 
     """
     err = 0
-    
     t = '\t'
+    
+    #sites = df[sit].unique()
+    types = df[typ].unique()
+    phases = df[phs].unique()
+    init_count = df.shape[0]
+    
     
     ## containers to keep tally of best transform
     ## first index is levene's equal variances.
     ## second is shapiro test for each site/phase combo
-    raw_tst = [0,0,0,0,0]
-    xfm_tst = [0,0,0,0,0]
+    raw_tst = [0]*(len(types)*len(phases)+1)
+    xfm_tst = [0]*(len(types)*len(phases)+1)
     
     raw_dat = []
     xfm_dat = []
@@ -508,18 +536,18 @@ def transformData(df, par_col, sit_col, phs_col, alpha=0.025, min_pass=2):
     
     raw_msg = ''
     xfm_msg = ''
+    
     ## Loop over sites in the sit_col
-    for s in df[sit_col].unique():
-        for p in df[phs_col].unique():
-            raw_dat.append(df[(df[sit_col]==s) & (df[phs_col]==p)][par_col].values)
-            
+    for t in df[typ].unique():
+        for p in df[phs].unique():
+            raw_dat.append(df[(df[typ]==t) & (df[phs]==p)][par].values)
     for rd in raw_dat:
         xfm_dat.append(np.log(rd))
             
-    ## First do a levenes test on both data
+    ## First do a levenes test on untransformed data
     raw_res = stats.levene(raw_dat[0], raw_dat[1], raw_dat[2], 
                                  raw_dat[3])
-    
+    ## Check Levenes test result
     if raw_res[1] >= alpha:
         raw_tst[0] = 1
         raw_msg += lev_msg.format("Raw", "are", alpha)
@@ -527,7 +555,8 @@ def transformData(df, par_col, sit_col, phs_col, alpha=0.025, min_pass=2):
         raw_msg += lev_msg.format("Raw", "are not", alpha)
         
     xfm_res = stats.levene(xfm_dat[0], xfm_dat[1], xfm_dat[2], 
-                                 xfm_dat[3])     
+                                 xfm_dat[3])
+    
     if xfm_res[1] >= alpha:
         raw_tst[0] = 1
         xfm_msg += lev_msg.format("Log", "are", alpha)
@@ -539,35 +568,32 @@ def transformData(df, par_col, sit_col, phs_col, alpha=0.025, min_pass=2):
         raw_p = stats.shapiro(raw_dat[l])                
         if raw_p[1] >= alpha:
             raw_tst[l+1] = 1
-            
     raw_msg += shap_msg.format(sum(raw_tst[1:]), len(raw_tst)-1, "Raw", alpha )        
 
     ## Set index         
-
     for l in range(len(raw_dat)):  
         xfm_p = stats.shapiro(xfm_dat[l])
         if xfm_p[1] >= alpha:
             xfm_tst[l+1] = 1
 
     xfm_msg += shap_msg.format(sum(xfm_tst[1:]), len(xfm_tst)-1, "Log", alpha ) 
-           
+
     if sum(raw_tst)<5:
         raw_msg += 3*t+"WARNING raw data sets not all normal\n"
         
     if sum(xfm_tst)<5:
         xfm_msg += 3*t+"WARNING transformed data sets not all normal\n"
 
-    
     if sum(xfm_tst) > min_pass or sum(raw_tst) > min_pass:
         nrm = 1
         if sum(xfm_tst) > sum(raw_tst):
-            df[par_col] = np.log(df[par_col].values)
+            df[par] = np.log(df[par].values)
             msg += xfm_msg
-            msg += 3*t+'Using Log data values for par: {0}\n'.format(par_col)
+            msg += 3*t+'Using Log data values for par: {0}\n'.format(par)
             xfm = 1
         else:
             msg += raw_msg
-            msg += 3*t+'Using raw data values for par : {0}\n'.format(par_col)
+            msg += 3*t+'Using raw data values for par : {0}\n'.format(par)
             xfm = 0
     else:
         msg+= 3*t+"Raw and Log data failed to pass test for normality\n"
@@ -577,7 +603,7 @@ def transformData(df, par_col, sit_col, phs_col, alpha=0.025, min_pass=2):
     return df, nrm, xfm, msg
 
 
-def sort_groups(df)
+#def sort_groups(df)
 
 
 def get_groups(df, pval):
@@ -623,54 +649,53 @@ def get_groups(df, pval):
 
 ## BEGIN MAIN #################################################################
 if __name__ == "__main__":
+    
+    ## establish some vanilla parameters: log_file and out_dir
     log_file = "log.txt"
-    
-    outdir = "output"
-    
-    remove_outliers = True
-    
-    paired_events = True
-    
-    outdir = os.path.join(os.getcwd(),outdir)
-    if not os.path.exists(outdir):
-        os.mkdir(outdir)
+    out_dir = "output"
     
     ## name for indvidual anova and regression tables
-    anv_tbl_name = "{0}_sites#{1}+{2}_param#{3}_reg-summary.txt"
+    sum_tbl_name = "{0}_sites#{1}+{2}_param#{3}_reg-summary.txt"
     
     ## name for individual plots
     plt_name = "{0}_sites#{1}+{2}_param#{3}_plot_multi-comp.png"
     
     ## name for multi plot file format with group name
-    multi_plt_name = "{0}_sites#{1}+{2}_multi-multi-comp.png"
+    pnl_plt_name = "{0}_sites#{1}+{2}_multi-multi-comp.png"
     
     ## file to read input parameters from
-    param_file = 'multi-comp_par.txt'
-    
-    ## minimum event count
-    min_evt = 5
-    
-    ## switch to remove outliers
-    rem_out = 1
+    param_file = 'NRCS_EoF_MULTICOMP_input.txt'
     
     ## columns to include in the output dataframe
     out_cols = ['group', 'ctrl_id', 'trmt_id', 'param', 'phase', 'n', 'x_avg', 
                 'y_avg', 'slope', 'slope_pval', 'intercept', 'intercept_pval',
                 'r2', 'xform']
     
+    os.path.join(out_dir, log_file)
+    outdir = os.path.join(os.getcwd(), out_dir)
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+        
+    #TODO: these should be in the control file
+    remove_outliers = True
+    paired_events = True
+    ## minimum event count
+    min_evt = 5
+    ## switch to remove outliers
+    rem_out = 1
+    
     ## read in the parameter file data
     params, msg, err = read_params(param_file)
     
     appendLogFile(log_file, msg, 'w')
-    
     
     if err == 0:
     
         ## read in the water quality data
         df, msg, err = readWqData(params)
         appendLogFile(log_file, msg)
+        
         if err == 0:
-    
             ## start analysis, loop over groups 
             group_col = params['group']['val']
             site_col = params['site']['val']
@@ -683,12 +708,13 @@ if __name__ == "__main__":
                 msg = "PROCESSING DATA & ANALYSIS FOR GROUP: {0}\n".format(g)
                 appendLogFile(log_file, msg)
                 
+                ## 
                 sites = df[df[group_col]==g][site_col][:].unique()
-    
+
                 ## the first site in the group is assumed to be the control
                 cs = sites[0]
-                    
                 
+                ##
                 tr_sites = sites[1:]
                     
                 ## check if there are control and treatment sites
@@ -707,23 +733,26 @@ if __name__ == "__main__":
                                        (df[site_col]==ts))][type_col].unique()[0:2]
                         
                         ## phases are assumed to be chronological i.e. baseline and treatmemnt
-                        ## names can be arbitrary but plots will be made using the sequence they occure
-                        ## in the data.
+                        ## names can be arbitrary but plots will be made using the sequence in
+                        ## which they occur in the data.
                         phases = df[(df[group_col]==g) & ((df[site_col]==cs) |
                                        (df[site_col]==ts))][phase_col].unique()[0:2]
                         
                         ## loop over parameters and create a
                         ## for each instance
                         obs_cols = params['data']['val']
+                        
                         ## Instantiate the panel plot
                         plt_rows = int((len(obs_cols)+1)/2)
                         ## row column indexes for subplots
                         plt_row = 0
                         plot_col = 0
                         
-                        ## ctrl var to determine if a plot is worthy of saving
+                        ## ctrl var to determine if a plot is worth saving
                         plt_chk = 0
                         
+                        #TODO: bump this to the end if multi-figure is wanted
+                        # save figs to a list and dump into a subplot later
                         ## instantiate figure to put the plots on. 
                         ## Plots will be n x 2 panel. Scale fig size to number of
                         ## rows needed
@@ -731,45 +760,37 @@ if __name__ == "__main__":
                                                 figsize=[8.5,max(11/4*plt_rows,11)], 
                                                 constrained_layout=True)
                         
-                        ##
+                        ## iterate over the observations
                         for obs_col in obs_cols:
                             msg = "\tProcessing Observation {0}\n".format(obs_col)
                             appendLogFile(log_file, msg)
                             
-                            ## get data for this group of sites
-                            pdf = df[(df[group_col]==g) & (df[obs_col].notna())][[
-                                site_col, date_col, type_col, phase_col, obs_col]]
+                            ## get req'd data for this group of sites and obs
+                            pdf = df[(df[group_col]==g) 
+                                     & (df[obs_col].notna()) 
+                                     & df[site_col].isin([cs,ts])][[site_col, date_col, type_col, phase_col, obs_col]]
                             
                             ## remove outlier data if selected
                             if remove_outliers == True:
-                                pdf, msg, err = removeOutliers(pdf, obs_col, 
-                                                               type_col, phase_col, 
+                                pdf, msg, err = removeOutliers(pdf,
+                                                               type_col, 
+                                                               phase_col,
+                                                               obs_col,
                                                                m=1.5)
+                                
                                 appendLogFile(log_file, msg)
                             else:
                                 msg='Outlier removal option not selected\n'
                                 appendLogFile(log_file, msg)
                         
                             if paired_events == True:
-                                ct_data = pdf[(pdf[type_col]==types[0]) &\
-                                               (df[obs_col]>0)][[date_col, 
-                                                                 phase_col, 
-                                                                 obs_col]]
-                                    
-                                ct_data.sort_values('date')
-                                
-                                ## get xment site data
-                                tr_data = pdf[(pdf[type_col]!=types[0]) &\
-                                               (df[obs_col]>0)][[date_col, 
-                                                                 phase_col, 
-                                                                 obs_col]]
-                                tr_data.sort_values('date')
-                                
+                               
                                 ## pair remaining data for final analysis
-                                pdf, msg, err = getPairedData(ct_data, tr_data, 
-                                                              types, phases, 
-                                                              date_col, obs_col, 
-                                                              phase_col, min_evt=5)
+                                pdf, msg, err = getPairedData(pdf, 
+                                                              date_col, 
+                                                              type_col,
+                                                              min_evt=5)
+                                
                                 msg='Utilizing data for only paired events\n'
                                 appendLogFile(log_file, msg)
                                 
@@ -779,14 +800,19 @@ if __name__ == "__main__":
                                 
                             ## check to see if data are normal or capable of being 
                             ## transformed to normal
-                            pdf, norm, xfrm, msg, err = transformData(pdf, obs_col, 
-                                                              site_col, phase_col, 
-                                                              alpha)
+                            pdf, norm, xfrm, msg, err = transformData(pdf, 
+                                                                      obs_col,
+                                                                      site_col,
+                                                                      type_col,
+                                                                      phase_col, 
+                                                                      alpha)
+
                             appendLogFile(log_file, msg)
+                            #TODO You are here
                             
                             ## run the anova analysis
                             if norm == 1:
-                                
+
                                 r0, r1, adf, mdf, cdf = runAncova(pdf, 
                                                                   iv_col=types[0],
                                                                   dv_col=types[1], 
@@ -797,7 +823,7 @@ if __name__ == "__main__":
                                 if xf == 1:
                                     r0.xfrm = 1
                                     r1.xfrm = 1
-                                    
+
                                 unit = params['units']['val'][obs.index(obs_col)]
                                 plt_lab = "{0} ({1})"
                                 plt_lab = plt_lab.format(obs_col, unit)

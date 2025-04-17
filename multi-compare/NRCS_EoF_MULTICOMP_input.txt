@@ -1,0 +1,81 @@
+################################################################################                    
+## Input file NRCS_EoF_multicomp.py a python script to produce multi-comparison 
+## analyses on data acquired from paired watershed design study (EPA, 1993).
+## This script requires a csv file of input data located within the same 
+## directory as this script. The data are event based flows and concentrations, 
+## loads or yields for sampled parameters for least one pair of sites, control 
+## and treatment, taken during two phases: baseline and treatment. Multiple 
+## treatment sites may be associated with a single control if they are included
+## under the same "group". See "example_data.csv" for further details on the 
+## input data file structure. 
+## Lines beginning with "#" are not read in
+################################################################################
+################################################################################ 
+## Required User Selected Parameters
+##------------------------------------------------------------------------------
+## file (string): name of data file that contains the paired watershed
+## observation data. Must reside in same directory as script is executed from.
+## See "example_data.csv" for further details on the input data file structure. 
+file = example_data.csv
+## group (string): name of data field in input file that contains the 
+## group name. A site must have at least one control and treatment site for the 
+## analysis.
+group =  group
+##------------------------------------------------------------------------------
+## site (string): column containing site id's/names that will be included within
+## a group analysis
+site = site
+##------------------------------------------------------------------------------
+## type (string): site type indicator column. "Ct" indicates control. 
+## All other values will be mapped to "Tx" for treatment. A group must have at  
+## least one site designated as a control 
+type = type
+##------------------------------------------------------------------------------
+## phase (String): phase indicator column. "Bl" indicates baseline phase, all
+## other values interpreted as treatment, "Tx". Each site within a group must 
+## have data associated with both phases in order to perform the analysis.
+phase = phase
+##------------------------------------------------------------------------------
+## date (mm/dd/yyyy): date column indicating date associated with each event at
+## each site. The analysis will be performed on events with matching dates on
+## the control and treatment sites.
+date = date
+##------------------------------------------------------------------------------
+## data (strings, comma separated): list of columns to perform analysis on. 
+## These are typically the water quality constituents and flow. eg. Q, NH4, TN
+data = Q, NO3-N, TKN, TP, TSS, OP
+## units (strings, comma separated): list of unit labels to use in labeling 
+## graphs. If optional parameters for scaling, normalizing and conversion are 
+## indicated in optional parameters below indicate resulting units here. 
+##eg. cu.ft, lbs/ac, lbs/ac
+units = cu.ft, lbs/ac, lbs/ac, lbs/ac, lbs/ac, lbs/ac
+##------------------------------------------------------------------------------
+## alpha (float<1): alpha value to conduct statistical test against.
+alpha = 0.1
+##------------------------------------------------------------------------------
+################################################################################
+## Optional User Selected Parameters, uncomment parameters to use.
+##------------------------------------------------------------------------------
+## scale (string, float): if string, specifies the column with which to multiply
+## corresponding data columns by or, if numeric, scale column values by. If 
+## scale is specified as a column and that column is specified within data too,
+## the values of the data column will not be scaled during the analysis. i.e. if 
+## scale is the flow column and the analysis is to be performed on flow the flow
+## will not be squared
+#scale =  Q
+##------------------------------------------------------------------------------
+## norm (string, float): specifies the column or numeric value by which to 
+## divide corresponding data columns by. If norm is specified as a column and 
+## that column is specified within data too, the values of the data column will 
+## not be scaled during the analysis. i.e. if norm is the flow column and the 
+## analysis is to be performed on flow the flow will not be squared.
+## This is useful if calculating yields and there's a column representing area
+#norm = acres
+##------------------------------------------------------------------------------
+## conv (float): numeric value used to convert results from scaling and
+## normalization. Will not be applied to columns in the data which are designated
+## as scale or norm. Example use: data are in units of mg/L, scale is in
+## cu.ft, and norm is ac. and the desired result units are in lbs/ac. In this 
+## case to convert mg/L*cu.ft/ac to lbs/ac the value would be 0.0000624
+#conv = 0.0000624
+################################################################################

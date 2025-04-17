@@ -1,0 +1,7 @@
+PARAMETER FILE 'NRCS_EoF_MULTICOMP_input.txt' READ SUCCESSFULLY
+DATA FILE 'example_data.csv' READ SUCCESSFULLY
+PROCESSING DATA & ANALYSIS FOR GROUP: MO_EoF
+Performing analysis for control MO1171601 and treatment MO1171602
+	Processing Observation Q
+		OUTLIER REMOVAL RESULTS
+			4 outliers found in 196 samples for par Q
