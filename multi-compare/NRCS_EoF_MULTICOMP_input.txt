@@ -17,13 +17,12 @@
 ## observation data. Must reside in same directory as script is executed from.
 ## See "example_data.csv" for further details on the input data file structure. 
 file = example_data.csv
-## group (string): name of data field in input file that contains the 
-## group name. A site must have at least one control and treatment site for the 
-## analysis.
+## group (string): name of data field in input data file that contains the 
+## group name. This associates sites with a larger group or project.
 group =  group
 ##------------------------------------------------------------------------------
 ## site (string): column containing site id's/names that will be included within
-## a group analysis
+## a group analysis. This is the NRCS assigned site name.
 site = site
 ##------------------------------------------------------------------------------
 ## type (string): site type indicator column. "Ct" indicates control. 
@@ -32,8 +31,7 @@ site = site
 type = type
 ##------------------------------------------------------------------------------
 ## phase (String): phase indicator column. "Bl" indicates baseline phase, all
-## other values interpreted as treatment, "Tx". Each site within a group must 
-## have data associated with both phases in order to perform the analysis.
+## other values interpreted as treatment, "Tx". 
 phase = phase
 ##------------------------------------------------------------------------------
 ## date (mm/dd/yyyy): date column indicating date associated with each event at
@@ -56,6 +54,8 @@ alpha = 0.1
 ################################################################################
 ## Optional User Selected Parameters, uncomment parameters to use.
 ##------------------------------------------------------------------------------
+## Paired data (bool): use only paired data for this analysis.
+paired = True
 ## scale (string, float): if string, specifies the column with which to multiply
 ## corresponding data columns by or, if numeric, scale column values by. If 
 ## scale is specified as a column and that column is specified within data too,
